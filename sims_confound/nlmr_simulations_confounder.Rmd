@@ -1,0 +1,96 @@
+---
+title: "nlmr_simulations_confounder"
+author: "Tianyuan Lu"
+date: "2023-09-06"
+output: html_document
+---
+
+Simulation with confounder was conducted with the following setting, where there was no causal effect of the exposure $X$ on the outcome $Y$ such that the association between $X$ and $Y$ was purely due to the confounder $U$. The instrument $G$ and the confounder $U$ can have an interaction effect on $X$.
+
+$X=0.3G+\beta_{UX}U+\beta_{GUX}GU+\epsilon_X$
+
+$Y=\beta_{UY}U+\epsilon_Y$
+
+We explored the impact of the $G$-by-$U$ interaction effect size by fixing $\beta_{UX}=0.3$ and $\beta_{UY}=0.3$, and varying $\beta_{GUX}\in\{-0.1,-0.02,0,0.02,0.1\}$. When $\beta_{GUX}=0$, there was no $G$-by-$U$ interaction effect.
+
+We explored the impact of the confounding effect size by fixing $\beta_{GUX}=-0.1$, and separately varying $\beta_{UY}\in\{0,0.05,0.3\}$ and $\beta_{UX}\in\{0,0.05,0.3\}$. When $\beta_{UY}=0$, there was no confounding effect, despite the $G$-by-$U$ interaction effect on $X$.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+## Load needed packages ###
+library(tidyverse)
+library(broom)
+library(patchwork)
+library(mgcv)
+library(metafor)
+library(faux)
+
+## Load my functions ###
+f = list.files("functions/")
+
+f
+for(file in f){
+  print(file)
+  source(paste0("functions/",file))
+}
+
+```
+
+```{r}
+test = sim_mydata_outcomes_confounder(n = 100000, seed = 1, bux = 0.3, buy = 0.3, bgux = -0.1)
+test_ss = generate_all_sumstats( data = test, exposure = "x", outcome = "y")
+
+
+## redefine data set
+test = test_ss$wdata
+## define sumstats tibble
+ss = test_ss$ss
+## make figures
+
+myplot = generate_plots_outcome(ss_data = ss, simdata = test, exposure = "x", outcome = "y", distribution_type = "beta")
+myplot
+```
+
+```{r}
+test = sim_mydata_outcomes_confounder_RINT(n = 100000, seed = 1, bux = 0.3, buy = 0.3, bgux = -0.1)
+test_ss = generate_all_sumstats( data = test, exposure = "x", outcome = "y")
+
+
+## redefine data set
+test = test_ss$wdata
+## define sumstats tibble
+ss = test_ss$ss
+## make figures
+
+myplot = generate_plots_outcome(ss_data = ss, simdata = test, exposure = "x", outcome = "y", distribution_type = "beta")
+myplot
+```
+
+```{r}
+analyses <- crossing(
+  exposures = c("x"),
+  outcomes = c("y")
+)
+map2(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, reps = 10, bux = 0.3, buy = 0.3, bgux = -0.1, .f = generate_outcome_plots_linear_replicates_confounder)
+
+map2(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, reps = 100, bux = 0.3, buy = 0.3, bgux = -0.02, .f = generate_outcome_plots_linear_replicates_confounder)
+
+map2(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, reps = 100, bux = 0.3, buy = 0.3, bgux = 0, .f = generate_outcome_plots_linear_replicates_confounder)
+
+map2(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, reps = 100, bux = 0.3, buy = 0.3, bgux = 0.02, .f = generate_outcome_plots_linear_replicates_confounder)
+
+map2(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, reps = 100, bux = 0.3, buy = 0.3, bgux = 0.1, .f = generate_outcome_plots_linear_replicates_confounder)
+
+
+map2(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, reps = 100, bux = 0.3, buy = 0.05, bgux = -0.1, .f = generate_outcome_plots_linear_replicates_confounder)
+
+
+map2(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, reps = 100, bux = 0.3, buy = 0, bgux = -0.1, .f = generate_outcome_plots_linear_replicates_confounder)
+
+
+map2(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, reps = 100, bux = 0.05, buy = 0.3, bgux = -0.1, .f = generate_outcome_plots_linear_replicates_confounder)
+
+map2(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, reps = 100, bux = 0, buy = 0.3, bgux = -0.1, .f = generate_outcome_plots_linear_replicates_confounder)
+
+```
