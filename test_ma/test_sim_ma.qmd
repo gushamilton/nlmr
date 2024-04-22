@@ -1,0 +1,228 @@
+---
+title: "nlmr_sims_meta_analysis"
+format: html
+editor: visual
+---
+
+First, bring in the functions
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+
+## Load needed packages ###
+library(tidyverse)
+library(broom)
+library(patchwork)
+library(mgcv)
+library(metafor)
+library(faux)
+
+## Load my functions ###
+f = list.files("functions/")
+
+f
+for(file in f){
+  print(file)
+  source(paste0("functions/",file))
+}
+
+```
+
+
+```{r}
+analyses <- crossing(
+  exposures = c("x"),
+outcomes = c("y")
+)
+ma_AB <- map2_dfr(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, .f = run_linear_plots_meta_analysis, replicates =100, n = 25000)
+
+
+
+ma_DC <- map2_dfr(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, .f = run_linear_plots_meta_analysis_varied_iv, replicates =100, n = 25000)
+
+
+ma_EF <- map2_dfr(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, .f = run_linear_plots_meta_analysis_interaction, replicates =100, n = 25000)
+
+
+ma_complex
+
+ggsave("sim_ma/true_vs_conventional_MR.tiff", compression = "lzw", height = 8, width = 8)
+
+
+p1 <- ma_simple_interaction%>%
+    mutate(linear = if_else(linear == 1, "linear IV-outcome effect", "non-linear IV outcome effect")) %>%
+  ggplot(aes(x = mr_beta_fe, y = beta_mr)) +
+  # geom_errorbar(aes(ymin = beta_mr - se_mr, ymax = beta_mr + se_mr)) +
+  geom_point(aes(colour = method)) +
+  geom_abline()  +
+    facet_wrap(~ linear, scales = "free")  +
+  xlab("IVW meta-analysis across strata") +
+  ylab("Conventional MR estimate") +
+  theme_bw() +
+  ggtitle("Fixed IV-exposure effect:")
+
+
+p1
+ma_complex %>%
+  mutate(diff = abs(mr_beta_fe - beta_mr)) %>%
+  arrange(-diff) %>%
+  ggplot(aes(x = abs(beta_mr), y = diff)) +
+  geom_point()
+
+p1
+p1 +
+   ggtitle("Meta-analyses across strata tend to match summary estimates in simulations") +
+  labs(subtitle = "Comparison of conventional MR vs fixed effects meta-analysis across strata") 
+
+ggsave("sim_ma/IVW_vs_conventional_MR_linear_iv_exposure.tiff", compression = "lzw", height = 8, width = 8)
+
+p1
+
+p2 <- ma_simple %>%
+   mutate(linear = if_else(linear == 1, "linear IV-outcome effect", "non-linear IV outcome effect")) %>%
+  ggplot(aes(x = abs(se_mr), y = mr_se_fe, colour = method)) +
+  geom_abline() +
+  geom_point() +
+    theme_bw() +
+  theme(legend.position = "bottom") +
+      facet_wrap(~ linear, scales = "free")  +
+  xlab("standard error of conventional MR estimate") +
+  ylab("Standard error from FE ma across strata")
+
+
+p2 +
+  ggtitle("SEs of FE meta-analysis are close to SEs of the conventional analysis but smaller ") 
+
+ggsave("sim_ma/IVW_SEvs_conventional_MR_SE_linear.tiff", compression = "lzw", height = 8, width = )
+
+p3 <- ma_complex %>%
+   mutate(linear = if_else(linear == 1, "linear", "non-linear")) %>%
+  ggplot(aes(x = mr_beta_fe, y = beta_mr)) +
+  # geom_errorbar(aes(ymin = beta_mr - se_mr, ymax = beta_mr + se_mr)) +
+  geom_point(aes(colour = method)) +
+  geom_abline()  +
+    facet_wrap(~ linear, scales = "free") +
+
+  xlab("IVW meta-analysis across strata") +
+  ylab("Conventional MR estimate") +
+  theme_bw() +
+  ggtitle("Variable IV-exposure effect:")
+
+
+p1 / p3 + plot_annotation(tag_levels = "A") + plot_layout(guides = "collect") & theme(legend.position = 'right')
+p3 +
+     ggtitle("Without a constant genetic effect, summed estimates don't always match") 
+
+ggsave("sim_ma/IVW_betas_conventional_betas_SE.tiff", compression = "lzw", height = 8, width = )
+
+
+ma_complex %>%
+  ggplot(aes(x = abs(se_mr), y = mr_se_fe, colour = method)) +
+  geom_abline() +
+  geom_point() +
+    theme_bw() +
+  theme(legend.position = "bottom") +
+  xlab("Overall standard error") +
+  ylab("Standard error from FE ma across strata") +
+  ggtitle("SEs of FE meta-analysis are close to SEs of the main analysis but \ndiffer with differing distributions ") +
+  labs(substile = "Note scale difference across strata")
+
+
+ggsave("sim_ma/IVW_SEvs_conventional_MR_SE.tiff", compression = "lzw", height = 8, width = )
+
+
+ma_comp %>%  
+   filter(outcome == "y") %>%
+   # filter(exposure == "x") %>%
+  mutate(abs_se_diff = abs(mr_se_fe-se_mr)/se_mr) %>%
+  ggplot(aes(x = abs_se_diff, y = beta_mr, colour = method)) +
+  geom_point() +
+  facet_wrap(~ exposure, scales = "free") +
+  theme_bw() +
+  xlab("Absolute SE difference (%)") +
+  ylab("Beta coefficent") +
+ scale_x_continuous(labels = scales::percent_format(scale = 100)) +
+   ggtitle("SE's from the IVW across strata are well controlled when betas \nare relatively small ")
+
+
+ggsave("sim_ma/IVW_SE_vs_IVW_betas.tiff", compression = "lzw", height = 10, width = 10)
+
+
+ma_fit %>%
+   filter(outcome == "y" &  exposure == "x") %>%
+  ggplot(aes(x = beta_gy, y = by_beta_fe, colour = method)) +
+  geom_point() +
+  facet_wrap(~ exposure + outcome) +
+  geom_abline() +
+    theme_bw() +
+  theme(legend.position = "bottom") +
+  xlab("Overall standard error") +
+  ylab("Standard error from RE ma across strata")
+
+ma_fit %>%
+   filter(outcome == "y" &  exposure == "x") %>%
+  ggplot(aes(x = beta_gy, y = by_beta_fe, colour = method)) +
+  geom_point() +
+  facet_wrap(~ exposure + outcome) +
+  geom_abline() +
+    theme_bw() +
+  theme(legend.position = "bottom") +
+  xlab("Overall standard error") +
+  ylab("Standard error from RE ma across strata")
+
+
+
+ma_fit2 %>%
+  ggplot(aes(x = (beta_mr), y = mr_beta_fe, colour = method)) +
+  geom_point() +
+    theme_bw() +
+  theme(legend.position = "bottom") +
+  xlab("Overall standard error") +
+  ylab("Standard error from FE ma across strata") +
+  ggtitle("SEs of FE meta-analysis are close to SEs of the main analysis but \ndiffer with differing distributions ") +
+  labs(substile = "Note scale difference across strata")
+ma_fit %>%
+   filter(outcome == "y" &  exposure == "x" & method == "ranked") %>%
+  bind_rows(
+    
+    tibble(se_mr = 0.0631, mr_se_fe = 0.0256, method = "steve")
+  ) %>%
+  ggplot(aes(x = se_mr, y = mr_se_fe, colour = method)) +
+  geom_point() +
+  # facet_wrap(~ exposure + outcome) +
+    theme_bw() +
+  geom_abline() +
+  geom_smooth(method = "lm") +
+  theme(legend.position = "bottom") +
+  xlab("Overall standard error") +
+  ylab("Standard error from FE ma across strata") +
+  scale_x_log10() +
+  scale_y_log10()
+
+ma_fit %>%
+   group_by(exposure,outcome,method) %>%
+  nest() %>%
+  mutate(res = map(data, .f = function(df) {tidy(lm(se_mr ~ mr_se_fe, data = df))})) %>%
+  unnest(res)
+
+s <- ma_fit %>%
+  filter(method == "ranked") %>%
+   filter(outcome == "y" &  exposure == "x") %>%
+  select(se_mr, mr_se_fe)
+
+s %>%
+  mutate(ratio = mr_se_fe/se_mr) %>%
+  ggplot(aes(x = ratio)) +
+  geom_histogram()
+
+m <- lm(se_mr ~ mr_se_fe + abs(iv_vary), data = ma_fit2)
+tidy(m)
+```
+
+
+
+
+```{r}
+
+```
+
