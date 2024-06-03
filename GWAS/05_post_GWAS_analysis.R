@@ -36,6 +36,12 @@ extreme_resid <- d %>%
   fastman::fastman_gg(chr = "CHROM", bp = "GENPOS", p = "p", maxP = 50) +
   ggtitle("Extreme strata (residual)")
 
+extreme_ranked %>%
+  filter(ID == "rs1558902") %>%
+  arrange(p) %>%
+  head(1000) %>%
+  view()
+
 overall <- bmi_plot / resid_plot / ranked_plot / extreme_resid / extreme_ranked +
   plot_annotation(tag_levels = "A")
 

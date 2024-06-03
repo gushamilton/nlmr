@@ -50,3 +50,61 @@ res <- map_dfr(list_snps$SNP, run_all_interactions)
 res %>%
   filter(str_detect(term, ":")) %>%
   arrange(p.value)
+
+
+internal_f <- function(d){
+t <- tidy(lm(body_mass_index_bmi ~ bmi_prs, data = d)) %>%
+  filter(term == "bmi_prs")}
+
+
+dat %>%
+  mutate(q_prs = ntile(bmi_prs,3)) %>%
+  group_by(q_prs) %>%
+  summarise(mean = mean(body_mass_index_bmi, na.rm = T))
+
+
+tibble(bmi_prs = rnorm(mean = 5, n = 1e5),
+       lbmi = 0.2* bmi_prs + rnorm(1e5) ,
+       bmi = exp(lbmi)) %>%
+  ggplot(aes(y = bmi, x = bmi_prs)) +
+  geom_point() +
+  geom_smooth() 
+  
+  
+  
+  # Create the dataset
+  set.seed(124) # for reproducibility
+d <- tibble(bmi_prs = rnorm(mean = 5, n = 3e5),
+            lbmi = 0.4 * bmi_prs + rnorm(3e5),
+            bmi = exp(lbmi))
+
+# Fit Ordinary Least Squares (OLS) Regression
+ols_model <- lm(bmi ~ bmi_prs, data = d)
+
+# Fit Fractional Polynomial Regression
+fracpoly_model <- mfp(bmi ~ fp(bmi_prs), data = d)
+
+comparison <- data.frame(
+  Model = c("OLS", "Fractional Polynomial"),
+  AIC = c(AIC(ols_model), AIC(fracpoly_model)),
+  BIC = c(BIC(ols_model), BIC(fracpoly_model)),
+  Adjusted_R2 = c(summary(ols_model)$adj.r.squared, summary(fracpoly_model)$adj.r.squared)
+)
+comparison
+
+
+# Fit Ordinary Least Squares (OLS) Regression
+ols_model <- lm((vitd) ~ (prs_vitd), data = dat)
+
+
+# Fit Fractional Polynomial Regression
+fracpoly_model <- mfp(vitd ~ fp(prs_vitd), data = dat)
+
+comparison <- data.frame(
+  Model = c("OLS", "Fractional Polynomial"),
+  AIC = c(AIC(ols_model), AIC(fracpoly_model)),
+  BIC = c(BIC(ols_model), BIC(fracpoly_model)),
+  Adjusted_R2 = c(summary(ols_model)$adj.r.squared, summary(fracpoly_model)$adj.r.squared)
+)
+comparison
+

@@ -44,13 +44,11 @@ ma_DC <- map2_dfr(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, 
 ma_EF <- map2_dfr(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, .f = run_linear_plots_meta_analysis_interaction, replicates =100, n = 25000)
 
 
-ma_complex
-
-ggsave("sim_ma/true_vs_conventional_MR.tiff", compression = "lzw", height = 8, width = 8)
 
 
-p1 <- ma_simple_interaction%>%
-    mutate(linear = if_else(linear == 1, "linear IV-outcome effect", "non-linear IV outcome effect")) %>%
+
+p1 <- ma_AB %>%
+    mutate(linear = if_else(linear == 1, "A: linear IV-exposure, linear IV-outcome", "B:linear IV-exposure,non-linear IV outcome effect")) %>%
   ggplot(aes(x = mr_beta_fe, y = beta_mr)) +
   # geom_errorbar(aes(ymin = beta_mr - se_mr, ymax = beta_mr + se_mr)) +
   geom_point(aes(colour = method)) +
@@ -58,18 +56,38 @@ p1 <- ma_simple_interaction%>%
     facet_wrap(~ linear, scales = "free")  +
   xlab("IVW meta-analysis across strata") +
   ylab("Conventional MR estimate") +
-  theme_bw() +
-  ggtitle("Fixed IV-exposure effect:")
-
+  theme_bw() 
 
 p1
-ma_complex %>%
-  mutate(diff = abs(mr_beta_fe - beta_mr)) %>%
-  arrange(-diff) %>%
-  ggplot(aes(x = abs(beta_mr), y = diff)) +
-  geom_point()
+p2 <- ma_DC %>%
+    mutate(linear = if_else(linear == 1, "C: non-linear IV-exposure, linear IV-outcome", "D:non-linear IV-exposure,non-linear IV outcome effect")) %>%
+  ggplot(aes(x = mr_beta_fe, y = beta_mr)) +
+  # geom_errorbar(aes(ymin = beta_mr - se_mr, ymax = beta_mr + se_mr)) +
+  geom_point(aes(colour = method)) +
+  geom_abline()  +
+    facet_wrap(~ linear, scales = "free")  +
+  xlab("IVW meta-analysis across strata") +
+  ylab("Conventional MR estimate") +
+  theme_bw()
 
-p1
+
+p3 <- ma_EF %>%
+    mutate(linear = if_else(linear == 1, "E: IV-exposure with interaction, linear IV-outcome", "F: IV-exposure with interaction,non-linear IV outcome")) %>%
+  ggplot(aes(x = mr_beta_fe, y = beta_mr)) +
+  # geom_errorbar(aes(ymin = beta_mr - se_mr, ymax = beta_mr + se_mr)) +
+  geom_point(aes(colour = method)) +
+  geom_abline()  +
+    facet_wrap(~ linear, scales = "free")  +
+  xlab("IVW meta-analysis across strata") +
+  ylab("Conventional MR estimate") +
+  theme_bw()
+
+p1/p2/p3 +
+  plot_layout(axis_titles = "collect", guides = "collect") & theme(legend.position = 'bottom')
+
+
+ggsave("test_ma/IVW_vs_conventional_MR_linear_iv_exposure.tiff", compression = "lzw", height = 8, width = 8)
+
 p1 +
    ggtitle("Meta-analyses across strata tend to match summary estimates in simulations") +
   labs(subtitle = "Comparison of conventional MR vs fixed effects meta-analysis across strata") 

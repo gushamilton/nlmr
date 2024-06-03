@@ -30,7 +30,7 @@ sim_mydata_outcomes_ma<- function(n = 25000,
       g = rnorm(n),
 
       x = rnorm(n) +  g * 0.1,
-      y = rnorm(n) - if_else(x < median(x),  (value+1) * 0.1 * x , (value + 1) * 0.4 *x^2 )) %>%
+      y = rnorm(n) + value*0.3*x^2 ) %>%
       as.data.frame()
     
   } else {
@@ -48,7 +48,6 @@ sim_mydata_outcomes_ma<- function(n = 25000,
   ########################
   return(mydata)
 }
-
 
 
 

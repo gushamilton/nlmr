@@ -30,7 +30,7 @@ sim_mydata_outcomes_ma_interaction <- function(n = 25000,
       g = rnorm(n),
       u = rnorm(n),
       x = rnorm(n) +  0.1 * g + 0.1 * u + -0.1*g*u,
-      y = rnorm(n) - if_else(x < median(x),  (value+1) * 0.1 * x + u * 0.4, (value + 1) * 0.4 *x^2 + u * 0.4)) %>%
+      y = rnorm(n) + value * 0.3*x^2 + u * 0.4) %>%
       as.data.frame()
     
   } else {
