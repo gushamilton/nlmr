@@ -28,7 +28,6 @@ for(file in f){
 
 ```
 
-
 ```{r}
 analyses <- crossing(
   exposures = c("x"),
@@ -43,7 +42,7 @@ ma_DC <- map2_dfr(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, 
 
 ma_EF <- map2_dfr(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, .f = run_linear_plots_meta_analysis_interaction, replicates =100, n = 25000)
 
-
+# ma_GH <- map2_dfr(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, .f = run_linear_plots_meta_analysis_vQTL, replicates =20, n = 25000)
 
 
 
@@ -237,10 +236,6 @@ m <- lm(se_mr ~ mr_se_fe + abs(iv_vary), data = ma_fit2)
 tidy(m)
 ```
 
-
-
-
 ```{r}
 
 ```
-

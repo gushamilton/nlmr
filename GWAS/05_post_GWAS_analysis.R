@@ -3,6 +3,117 @@ pacman::p_load(tidyverse, vroom, qqman, data.table, TwoSampleMR, fastman, patchw
 d <- vroom("/Users/fh6520/data/non-linear/combined_pre_sub.tsv.gz")
 names <- vroom("/Users/fh6520/data/non-linear/01.regenie.Ydict", col_names = c("column", "pheno"))
 
+bmi_risk_score <- vroom("input/BMI_risk_score_Locke.tsv")
+
+outcomes <- d %>%
+  filter(ID %in% bmi_risk_score$SNP)
+
+
+# GENERATE FIGURE 2
+
+
+p1 <- outcomes %>%
+  select(ID, contains("Y1"), contains("Y3"), contains("Y4")) %>%
+  select(ID, contains("BETA"), contains("SE")) %>%
+  pivot_longer(cols = contains("BETA"), names_to = "BETA") %>%
+  pivot_longer(cols = contains("SE"), names_to = "SE", values_to = "SE_v") %>%
+  filter(str_remove(BETA, "BETA.") == str_remove(SE, "SE.")) %>%
+  filter(BETA != "BETA.Y1") %>%
+  mutate(BETA = if_else(BETA == "BETA.Y3", "Ranked", "Residual")) %>%
+  arrange(value) %>%
+  head(68) %>%
+
+  ggforestplot::forestplot(estimate = value,
+                           se = SE_v,
+                           colour = BETA,
+                           name = ID) +
+  xlab("Beta on strata membership") +
+  theme(legend.position = "bottom")
+
+p1
+
+p2 <- outcomes %>%
+  select(ID, contains("Y1"), contains("Y3"), contains("Y4")) %>%
+  select(ID, contains("BETA"), contains("SE")) %>%
+  pivot_longer(cols = contains("BETA"), names_to = "BETA") %>%
+  pivot_longer(cols = contains("SE"), names_to = "SE", values_to = "SE_v") %>%
+  filter(str_remove(BETA, "BETA.") == str_remove(SE, "SE.")) %>%
+  filter(BETA != "BETA.Y1") %>%
+  mutate(BETA = if_else(BETA == "BETA.Y3", "Ranked", "Residual")) %>%
+  arrange(value) %>%
+  tail(68) %>%
+
+  ggforestplot::forestplot(estimate = value,
+                           se = SE_v,
+                           colour = BETA,
+                           name = ID) +
+  xlab("Beta on strata membership") +
+  theme(legend.position = "bottom")
+
+
+p1 + p2 + plot_layout(guides = "collect") & theme(legend.position = 'bottom', legend.title = element_blank())
+
+ggview::ggview(p1, width = 5, height = 8, units = "in")
+pdf("figures/sup_figure_1.pdf",width=15,height = 8)
+par(mfrow=c(1,2)) # 
+p3 <- qqman::qq(10^-outcomes$LOG10P.Y4, main = "Residual method: p-values of SNPs in the IV on strata membership")
+p4 <- qqman::qq(10^-outcomes$LOG10P.Y3, main = "Ranked method: p-values of SNPs in the IV on strata membership")
+dev.off()
+
+
+
+# Now FIgure 2 - on extreme
+
+
+
+p1 <- outcomes %>%
+  select(ID, contains("Y1"), contains("Y5"), contains("Y6")) %>%
+  select(ID, contains("BETA"), contains("SE")) %>%
+  pivot_longer(cols = contains("BETA"), names_to = "BETA") %>%
+  pivot_longer(cols = contains("SE"), names_to = "SE", values_to = "SE_v") %>%
+  filter(str_remove(BETA, "BETA.") == str_remove(SE, "SE.")) %>%
+  filter(BETA != "BETA.Y1") %>%
+  mutate(BETA = if_else(BETA == "BETA.Y5", "Ranked", "Residual")) %>%
+  head(68) %>%
+  arrange(value) %>%
+  ggforestplot::forestplot(estimate = value,
+                           se = SE_v,
+                           colour = BETA,
+                           name = ID) +
+  xlab("Beta on extreme strata membership") +
+  theme(legend.position = "bottom")
+
+p1
+
+p2 <- outcomes %>%
+  select(ID, contains("Y1"), contains("Y5"), contains("Y6")) %>%
+  select(ID, contains("BETA"), contains("SE")) %>%
+  pivot_longer(cols = contains("BETA"), names_to = "BETA") %>%
+  pivot_longer(cols = contains("SE"), names_to = "SE", values_to = "SE_v") %>%
+  filter(str_remove(BETA, "BETA.") == str_remove(SE, "SE.")) %>%
+  filter(BETA != "BETA.Y1") %>%
+  mutate(BETA = if_else(BETA == "BETA.Y5", "Ranked", "Residual")) %>%
+  tail(68) %>%
+  arrange(value) %>%
+  ggforestplot::forestplot(estimate = value,
+                           se = SE_v,
+                           colour = BETA,
+                           name = ID) +
+  xlab("Beta on extreme strata membership") +
+  theme(legend.position = "bottom")
+
+
+p1 + p2 + plot_layout(guides = "collect") & theme(legend.position = 'bottom', legend.title = element_blank())
+
+ggsave("figures/sup_figure_3.pdf",width=15,height = 8)
+
+pdf("figures/sup_figure_4.pdf",width=15,height = 8)
+par(mfrow=c(1,2)) # 
+p3 <- qqman::qq(10^-outcomes$LOG10P.Y6, main = "Residual method: p-values of SNPs in the IV on strata membership")
+p4 <- qqman::qq(10^-outcomes$LOG10P.Y5, main = "Ranked method: p-values of SNPs in the IV on strata membership")
+
+
+#  now for main GWAS plotsxs
 names
 bmi_plot <- d %>%
   filter(A1FREQ >0.01, INFO >0.8) %>%

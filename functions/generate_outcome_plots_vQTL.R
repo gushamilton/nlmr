@@ -1,0 +1,38 @@
+generate_outcome_plots_vQTL<- function(exposure, outcome, seed = "123", reps = 10,
+                                       g_sd = 0.1,
+
+                                                                bv = 0, bx = 0) {
+  
+
+  replicate_internally <- function(n_rep) {
+  seed = seed + n_rep
+  dat <-  sim_mydata_outcomes_vQTL(n = 100000, seed = seed,
+                                   g_sd = g_sd,
+
+                                         bv = bv, bx = bx)
+  dat_with_both <- generate_all_sumstats(data = dat, exposure = exposure, outcome = outcome, k = 10)
+  
+  ## redefine data set
+  
+  
+  ## define sumstats tibble
+  sum_stats_dat = dat_with_both$ss
+  
+  sum_stats_dat %>%
+    mutate(replicate = n_rep)
+  }
+  
+  d <- map_dfr(1:reps, replicate_internally)
+ 
+  dat <-  sim_mydata_outcomes_vQTL(n = 100000, seed = seed)
+  
+  ## make figures
+
+
+  make_figures_replicates(d,exposure,outcome,dat,reps, "figures/linear/", paste0("_linear_effect_vQTL_", bv, "_bv", bx, "_bx", g_sd, "_b_var")) 
+}
+
+
+
+
+

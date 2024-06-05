@@ -12,9 +12,25 @@ dat <- dat %>%
 
 relevel(factor(dat$uk_biobank_assessment_centre), ref = "Leeds")
 
+dat$pr
 dat <- dat %>%
-  mutate(ukbac = relevel(factor(dat$uk_biobank_assessment_centre), ref = "Leeds"))
-d <- tidy(lm(log(vitd) ~ scale(prs_vitd)*townsend_deprivation_index_at_recruitment, data = dat))
+  mutate(ukbac = relevel(factor(dat$uk_biobank_assessment_centre), ref = "Leeds")) %>%
+  drop_na(body_mass_index_bmi, prs_vitd)
+d <- (lm(ldl_direct ~ scale(prs_LDL), data = dat))
+bp_test_r <- bptest(d)
+bp_test_r$statistic
+pchisq(bp_test_r$statistic, df = 1, lower.tail = F, log.p = F)
+
+skedastic::glejser(d)
+
+# Print the R-squared value
+print(paste("R-squared value for variance explained:", r_squared_residuals))
+
+dat %>%
+  mutate(strat = ntile(prs_LDL, 10)) %>%
+  group_by(strat) %>%
+  summarise(mean_vitd = mean(ldl_direct, na.rm = T), sd_vit_d = sd(ldl_direct, na.rm = T)^2) %>%
+  gt::gt()
 
 
 dat %>%
@@ -30,8 +46,4 @@ library(DRMR)
 d_nom <- dat %>%
   drop_na(body_mass_index_bmi, bmi_prs, age_at_recruitment)
 
-s <- SUMnlmr::create_nlmr_summary(d_nom$age_at_entry,x = d_nom$body_mass_index_bmi, d_nom$bmi_prs, q = 100, strata_method = "ranked") 
-s$summary %>%
-  ggplot(aes(x = bxse)) +
-  geom_histogram() +
-  scale_x_log10()
+
