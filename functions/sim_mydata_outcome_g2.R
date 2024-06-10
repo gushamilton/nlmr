@@ -1,10 +1,12 @@
 sim_mydata_outcomes_g2 <- function(n = 100000,
-                                           mu = c(0, 0, 0, 0, 0), 
+                                           mu = c(2, 0, 0, 0, 0), 
                                            sd = c(1, 1, 1, 1, 1), 
                                            r = 0, 
                                            varnames = c("g", "x", "y", "u", "v"),
-                                           bv = 0,
-                                           g2 = 0,
+                                           buy = 0,
+                                     bux = 0,
+                                           bx = 0,
+                                   exp =1,
                                            seed = seed
 ){ 
   
@@ -18,15 +20,15 @@ sim_mydata_outcomes_g2 <- function(n = 100000,
   ########################
   ## Simulate the data 
   ########################
-  mydata <- faux::rnorm_multi(n = 100000, 
+  mydata <- faux::rnorm_multi(n = n, 
                               mu = mu,
                               sd = sd,
                               r = r, 
                               varnames = varnames,
                               empirical = FALSE) %>%
     
-    mutate(x = (range01(g*10))^3 *g2 + bv * v + rnorm(n)) %>%
-    mutate(y = 0 * x + bv * v + rnorm(n))
+    mutate(x = g^exp *bx + bux * v + rnorm(n)) %>%
+    mutate(y = 0 * x + buy * v + rnorm(n)) 
   
   ########################
   ## produce transformed 
@@ -76,14 +78,28 @@ sim_mydata_outcomes_g2 <- function(n = 100000,
   return(mydata)
 }
 
-s <- sim_mydata_outcomes_g2(seed = 203, n = 100000,g2 = 5)
-s %>%
-  mutate(x = exp(g + 0.2*rnorm(1e5))) %>%
+sim_mydata_outcomes_g2(seed = 123, bx = 1, exp =3) %>%
   ggplot(aes(x = g, y = x)) +
   geom_point()
 
-s %>%
-  mutate(x = exp(g + 0.2*rnorm(1e5))) %>%
+
+
+
+
+
+sim_mydata_outcomes_g2(seed = 1333, g2 = 0.1, bux = -0.4, buy = 0, n = 1e5) %>%
+  mutate(strata = ntile(g, 10000)) %>%
+  mutate(dr = as.numeric(generate_ranked_strata(g,x,10))) %>%
+  filter(dr == 1) %>%
+  ggplot(aes(x = g, y = x, colour = strata)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+s <- sim_mydata_outcomes_g2(seed = 123, g2 = 0.05, bux = 0.4) 
+
+glance(lm(x ~g, data = s))
+sim_mydata_outcomes_g2(seed = 123, g2 = 0.5, bux = 0.4) %>%
   mutate(strat = ntile(g, 10)) %>%
   group_by(strat) %>%
-  summarise(d = sd(x))
+  summarise(g = sd(x))
+

@@ -1,7 +1,7 @@
 generate_outcome_plots_vQTL<- function(exposure, outcome, seed = "123", reps = 10,
                                        g_sd = 0.1,
 
-                                                                bv = 0, bx = 0) {
+                                                                bux = 0, bx = 0, buy = 0) {
   
 
   replicate_internally <- function(n_rep) {
@@ -9,7 +9,7 @@ generate_outcome_plots_vQTL<- function(exposure, outcome, seed = "123", reps = 1
   dat <-  sim_mydata_outcomes_vQTL(n = 100000, seed = seed,
                                    g_sd = g_sd,
 
-                                         bv = bv, bx = bx)
+                                         bux= bux, bx = bx, buy = buy)
   dat_with_both <- generate_all_sumstats(data = dat, exposure = exposure, outcome = outcome, k = 10)
   
   ## redefine data set
@@ -29,7 +29,7 @@ generate_outcome_plots_vQTL<- function(exposure, outcome, seed = "123", reps = 1
   ## make figures
 
 
-  make_figures_replicates(d,exposure,outcome,dat,reps, "figures/linear/", paste0("_linear_effect_vQTL_", bv, "_bv", bx, "_bx", g_sd, "_b_var")) 
+  make_figures_replicates(d,exposure,outcome,dat,reps, "figures/linear/", paste0("variance_alone_","bx=",bx, "_bux=",bux, "_buy=", buy, "_b_var=",g_sd)) 
 }
 
 

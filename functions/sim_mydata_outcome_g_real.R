@@ -1,12 +1,12 @@
-sim_mydata_outcomes_vQTL <- function(n = 100000,
-                                           mu = c(0, 0, 0, 0, 0), 
+sim_mydata_outcomes_g_real <- function(n = 100000,
+                                           mu = c(0, 0, 0, 4, 0), 
                                            sd = c(1, 1, 1, 1, 1), 
                                            r = 0, 
-                                           varnames = c("g", "x", "y", "u", "v"),
-                                           bux = 0,
-                                           bx = 0,
-                                            buy = 0,
-                                           g_sd = 0,
+                                           varnames = c("g1", "x", "y", "g2", "v"),
+                                           buy = 0,
+                                   bux = 0,
+                                           bx1 = 0,
+                                            bx2 = 0,
                                            seed = seed
 ){ 
   
@@ -14,6 +14,8 @@ sim_mydata_outcomes_vQTL <- function(n = 100000,
   ## Simulate the data 
   ########################
   set.seed(seed)
+  
+  range01 <- function(x){(x-min(x))/(max(x)-min(x))}
   
   ########################
   ## Simulate the data 
@@ -24,8 +26,9 @@ sim_mydata_outcomes_vQTL <- function(n = 100000,
                               r = r, 
                               varnames = varnames,
                               empirical = FALSE) %>%
-    mutate(g_rank = rank(g) / max(rank(g))) %>%
-    mutate(x = bx * g + rnorm(n, mean = 0, sd =  g_rank *g_sd + 1) + bux * v) %>%
+    
+    mutate(x = g2^2 *bx2 + g*bx1  + bux * v + rnorm(n),
+           g = g+g2) %>%
     mutate(y = 0 * x + buy * v + rnorm(n))
   
   ########################
@@ -76,26 +79,11 @@ sim_mydata_outcomes_vQTL <- function(n = 100000,
   return(mydata)
 }
 
-s <- sim_mydata_outcomes_vQTL(seed = 203, n = 100000)
-
-s %>%
-  as_tibble() %>%
-  mutate(strat = ntile(g, 10)) %>%
-  group_by(strat) %>%
-  summarise(mean = mean(x), sd = sd(x))
-
-model <- lm(x ~g, data = s)
-tidy(model)
-bptest(model)
+sim_mydata_outcomes_g_real(seed = 123, bx1 = 0.5, bx2 = 0.6) %>%
+  ggplot(aes(x = g, y = x)) +
+  geom_point()
 
 
-s %>%
-  as_tibble() %>%
-  mutate(strat = ntile(g, 1000)) %>%
-  mutate(dr = generate_ranked_strata(g,x,100)) %>%
-  filter(dr == 100 | dr == 1) %>%
-  # filter(strat == 1000 | strat == 1) %>%
-  ggplot() +
-  geom_smooth(aes(x = g, y = x, group = dr))  +
-  geom_point(aes(x = g, y = x, colour = strat))
+
+
 

@@ -31,8 +31,11 @@ generate_outcome_plots_linear_replicates_confounder <- function(exposure, outcom
   ## make figures
 
 
-  make_figures_replicates(d,exposure,outcome,dat,reps, "figures/linear/", paste0("_linear_effect_confounder_bux",bux,"_buy",buy,"_bgux",bgux,"_", bv, "_bv")) 
-}
+ 
+  
+
+   make_figures_replicates(d, exposure, outcome, dat, reps, "figures/linear/", paste0("linear_effect_confounder_bux=", bux, "_buy=", buy, "_bgux=", bgux, "_bv=", bv))
+   }
 
 
 
