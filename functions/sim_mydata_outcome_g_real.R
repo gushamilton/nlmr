@@ -15,7 +15,7 @@ sim_mydata_outcomes_g_real <- function(n = 100000,
   ########################
   set.seed(seed)
   
-  range01 <- function(x){(x-min(x))/(max(x)-min(x))}
+  # range01 <- function(x){(x-min(x))/(max(x)-min(x))}
   
   ########################
   ## Simulate the data 
@@ -78,10 +78,6 @@ sim_mydata_outcomes_g_real <- function(n = 100000,
   ########################
   return(mydata)
 }
-
-sim_mydata_outcomes_g_real(seed = 123, bx1 = 0.5, bx2 = 0.6) %>%
-  ggplot(aes(x = g, y = x)) +
-  geom_point()
 
 
 

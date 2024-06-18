@@ -1,14 +1,17 @@
 generate_outcome_plots_g2<- function(exposure, outcome, seed = "123", reps = 10,
-                                       g2 = 0.4,
-                                     bux = 0,
+                                       bx = bx,
+                                     exp = exp,
+                                     bux = bux,
+                                     n = n,
 
-                                                                buy = 0) {
+                                                                buy = buy) {
   
 
   replicate_internally <- function(n_rep) {
   seed = seed + n_rep
-  dat <-  sim_mydata_outcomes_g2(n = 100000, seed = seed,
-                                   g2 = g2,
+  dat <-  sim_mydata_outcomes_g2(n = n, seed = seed,
+                                   bx = bx,
+                                 exp = exp,
                                  buy = buy,
 
                                          bux = bux)
@@ -26,17 +29,12 @@ generate_outcome_plots_g2<- function(exposure, outcome, seed = "123", reps = 10,
   
   d <- map_dfr(1:reps, replicate_internally)
  
-  dat <-  sim_mydata_outcomes_g2(n = 100000, seed = seed, g2 = g2, bux = bux, buy = buy)
+  dat <-  sim_mydata_outcomes_g2(n = n,seed = seed, bx = bx, bux = bux,exp = exp, buy = buy)
   
   ## make figures
 
 
-  make_figures_replicates(d,exposure,outcome,dat,reps, "figures/linear/", paste0("exponential_bx=", g2, "_bux=", bux, "_buy=", buy)) 
+  make_figures_replicates(d,exposure,outcome,dat,reps, "figures/linear/", paste0("exponential_bx=", bx, "_exp=",exp, "_bux=", bux, "_buy=", buy)) 
 }
-
-
-
-
-
 
 

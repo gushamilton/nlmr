@@ -145,6 +145,14 @@ map2(.x = analyses$exposures, .y = analyses$outcomes, seed = 203, reps = 100,
 
 map2(.x = analyses$exposures, .y = analyses$outcomes, seed = 203, reps = 100,
      bux= 0.5, buy = -0.5, g_sd = 0.5, bx = 0.3,.f = generate_outcome_plots_vQTL)
+
+#  test no mean effect
+map2(.x = analyses$exposures, .y = analyses$outcomes, seed = 23, reps = 100,
+     bux= 0.5, buy = -0.5, g_sd = 0.5, bx = 0,.f = generate_outcome_plots_vQTL)
+
+
+map2(.x = analyses$exposures, .y = analyses$outcomes, seed = 23, reps = 100,
+     bux= 1, buy = 1, g_sd = 0, bx = 0.3, u_sd = 1,.f = generate_outcome_plots_vQTL)
 ```
 
 Now to explain why
@@ -214,8 +222,9 @@ ggsave("figures/explain_why_variance_matters.png", height = 12, width = 8)
 Now, g2
 
 ```{r}
-map2(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, reps = 20, bux = 1, g2 = 0.2,buy = 0.5,.f = generate_outcome_plots_g2)
+map2(.x = analyses$exposures, .y = analyses$outcomes, seed = 2023, reps = 30, bux = 1, bx1 = 0.3,buy = 1,bx2 = 0.1,.f = generate_outcome_plots_g_real)
 
+map2(.x = "x", .y = "y", seed = 2023, reps = 30, bux = -0.5, exp =5,buy = -1, bx = 0.2, n = 1e5,.f = generate_outcome_plots_g2)
 ```
 
 ```{r}

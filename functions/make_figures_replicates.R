@@ -6,30 +6,35 @@ make_figures_replicates <- function(d, exposure, outcome, dat,reps, location, na
     summarise_all(., mean) %>%
     ungroup()
   # 
-  # get_pvals = function(df){
-  #   p_quadratic <- metafor::rma(beta_mr ~ mean, (se_mr)^2, method="FE", data = df, control=list(maxiter=1000))$pval[2]
-  #   p_Q <- 1 - pchisq(metafor::rma(beta_mr, vi=(se_mr)^2, data = df, control=list(maxiter=1000))$QE, df=(9))
-  #   tibble(quadratic_p = p_quadratic, Q_p = p_Q)
-  # }
-  # 
-  # p_res <- d %>%
-  #   filter(strata_method != "full") %>%
-  #   
-  #   group_by(strata_method, replicate) %>%
-  #   nest() %>%
-  #   mutate(res = map(data, get_pvals)) %>%
-  #   unnest(res) %>%
-  #   ungroup()
-  # 
-  # ranked_ps <- p_res %>%
-  #   filter(strata_method == "ranked") %>%
-  #   mutate(quadratic_p = if_else(quadratic_p ==0, 1e-300, quadratic_p)) %>%
-  #   mutate(Q_p = if_else(Q_p ==0, NA, Q_p))
-  # resid_ps <- p_res %>%
-  #   filter(strata_method == "residual") %>%
-  #   mutate(quadratic_p = if_else(quadratic_p ==0, 1e-300, quadratic_p)) %>%
-  #   mutate(Q_p = if_else(Q_p ==0, NA, Q_p))
+  get_pvals = function(df){
+    p_quadratic <- metafor::rma(beta_mr ~ mean, (se_mr)^2, method="FE", data = df, control=list(maxiter=1000))$pval[2]
+    p_Q <- 1 - pchisq(metafor::rma(beta_mr, vi=(se_mr)^2, data = df, control=list(maxiter=1000))$QE, df=(9))
+    tibble(quadratic_p = p_quadratic, Q_p = p_Q)
+  }
+
+  p_res <- d %>%
+    filter(strata_method != "full") %>%
+
+    group_by(strata_method, replicate) %>%
+    nest() %>%
+    mutate(res = map(data, get_pvals)) %>%
+    unnest(res) %>%
+    ungroup()
+
+  ranked_ps <- p_res %>%
+    filter(strata_method == "ranked") %>%
+    mutate(quadratic_p = if_else(quadratic_p ==0, 1e-300, quadratic_p)) %>%
+    mutate(Q_p = if_else(Q_p ==0, NA, Q_p))
+  resid_ps <- p_res %>%
+    filter(strata_method == "residual") %>%
+    mutate(quadratic_p = if_else(quadratic_p ==0, 1e-300, quadratic_p)) %>%
+    mutate(Q_p = if_else(Q_p ==0, NA, Q_p))
   
+  lambda_function <- function(pval){
+    chisq <- qchisq(1-pval,1)
+  lambda = median(chisq)/qchisq(0.5,1)
+  lambda
+  }
 
   r2_gene_exposure <- round(sum_stats_dat$r2_gene_exposure[1], digits = 4)
   r2_gene_outcome <- round(sum_stats_dat$r2_gene_outcome[1], digits = 4)
@@ -48,7 +53,7 @@ make_figures_replicates <- function(d, exposure, outcome, dat,reps, location, na
     geom_boxplot() +
     geom_hline(yintercept = sum_stats_dat$beta_gx[1], linetype = "dashed", color = "blue") +
     theme_bw() +
-    facet_wrap(~strata_method, scales = "free") +
+    facet_wrap(~strata_method) +
     labs( title = "Gene-exposure effect estimates across strata" ) +
     ylab("Betas from replicates (interquartile ranges)")
   
@@ -78,10 +83,23 @@ make_figures_replicates <- function(d, exposure, outcome, dat,reps, location, na
     
     theme_bw() +
     facet_wrap(~strata_method, scales = "free") +
-    labs( title = "MR effect estimates across strata" ) +
+    labs( title = "MR effect estimates across strata" ,
+          caption = paste0("Cochrane FDR at p = 0.05; Ranked: ",  
+                           signif(mean(ranked_ps$Q_p <0.05),3)," Residual: ",
+                           signif(mean(resid_ps$Q_p < 0.05),3)
+          )) +
     ylab("Betas from replicates (interquartile ranges)")
   
- 
+  # p9 <-hwep::qqpvalue(resid_ps$quadratic_p, method = "ggplot2", return = T) + ggtitle("Trend test/Quadratic test (Residual)")
+  # 
+  # p10 <- hwep::qqpvalue(ranked_ps$quadratic_p, method = "ggplot2", return = T) + ggtitle("Trend test/Quadratic test (Ranked)")
+  # 
+  # p11 <-hwep::qqpvalue(resid_ps$Q_p, method = "ggplot2", return = T) + ggtitle("Cochran's Q across strata P value's (residual)")
+  # 
+  # p12 <- hwep::qqpvalue(ranked_ps$Q_p, method = "ggplot2", return = T) + ggtitle("Cochran's Q across strata P value's (doubly-ranked)")
+  # 
+  # 
+  # 
   
   ######################
   ### FULL DATA SET
@@ -108,7 +126,9 @@ make_figures_replicates <- function(d, exposure, outcome, dat,reps, location, na
     # geom_smooth(method = "lm", formula = y~ x, color = "red") +
     theme_bw() +
     labs(x = "instrument", y = "outcome", title = paste0("iv ~ outcome, R2 = ", r2_gene_outcome, " p = ", p_gene_outcome))
-  master_plot =    p1 / p2 / p3  + plot_annotation(tag_levels = "A", caption = name)
+  
+  master_plot =   ( p1 / p2 / p3)  + plot_annotation(tag_levels = "A", caption = name)
+  # master_plot =   ( p1 / p2 / p3)  + (p10 + p9) / (p12+p11) + plot_annotation(tag_levels = "A", caption = name)
   
 
   p13 = sum_stats_dat  %>%
@@ -149,5 +169,5 @@ make_figures_replicates <- function(d, exposure, outcome, dat,reps, location, na
     se_plot = p15/p14/p13
     ggsave(se_plot, filename = paste0(location, "/se/se_",name, reps,".pdf"), width = 10, height = 10)
 
-  ggsave(master_plot, filename = paste0(location, name, reps,"_reps.pdf"), width = 8, height = 10)
+  ggsave(master_plot, filename = paste0(location, name, reps,"_reps.pdf"), width = 8, height = 14)
 }
